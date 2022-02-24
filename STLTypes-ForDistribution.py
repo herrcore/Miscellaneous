@@ -1,6 +1,7 @@
 # (C) Rolf Rolles, Mobius Strip Reverse Engineering, 9/21/2021.
 
 import idaapi
+import functools 
 
 stl_map_keyvalue_fmt = ("struct {2}_{3}_keyvalue_t"
 "{{"
@@ -41,23 +42,23 @@ stl_map_func_insert_hint = "_Tree_node_{2}_{3} **__fastcall map_{2}_{3}_insert_h
 stl_map_funcsigs = [stl_map_func_insert_at, stl_map_func_insert_nohint, stl_map_func_insert_hint]
 
 def ParseOneDecl(declWithSemi):
-	retVal = idaapi.parse_decls(None, declWithSemi, None, idaapi.convert_pt_flags_to_hti(idaapi.PT_TYP))
-	return retVal is not None
+    retVal = idaapi.parse_decls(None, declWithSemi, None, idaapi.convert_pt_flags_to_hti(idaapi.PT_TYP))
+    return retVal is not None
 
 def MakeMapTypes(sKeyType, sValType, sKeyName=None, sValName=None):
-	if sKeyName is None:
-		sKeyName = sKeyType
-	if sValName is None:
-		sValName = sValType
-	stl_types_reified = map(lambda s:s.format(sKeyType,sValType,sKeyName,sValName),stl_map_templates)
-	stl_types_reduced = reduce(lambda x,y: x+y, stl_types_reified)
-	if not ParseOneDecl(stl_types_reduced):
-		print("Could not parse declaration: %s" % stl_types_reduced)
-		return False
-	stl_funcs_reified = map(lambda s:s.format(sKeyType,sValType,sKeyName,sValName),stl_map_funcsigs)
-	stl_funcs_reduced = reduce(lambda x,y: x+"\n"+y, stl_funcs_reified)
-	return True
-	
+    if sKeyName is None:
+        sKeyName = sKeyType
+    if sValName is None:
+        sValName = sValType
+    stl_types_reified = map(lambda s:s.format(sKeyType,sValType,sKeyName,sValName),stl_map_templates)
+    stl_types_reduced = functools.reduce(lambda x,y: x+y, stl_types_reified)
+    if not ParseOneDecl(stl_types_reduced):
+        print("Could not parse declaration: %s" % stl_types_reduced)
+        return False
+    stl_funcs_reified = map(lambda s:s.format(sKeyType,sValType,sKeyName,sValName),stl_map_funcsigs)
+    stl_funcs_reduced = functools.reduce(lambda x,y: x+"\n"+y, stl_funcs_reified)
+    return True
+    
 stl_set_node_fmt = ("struct _Tree_node_{1};" # FORWARD DECLARATION
 "struct _Tree_node_{1}"
 "{{ "
@@ -85,15 +86,15 @@ stl_set_pairib = ("struct __cppobj set_{1}_iterator_pairib"
 stl_set_templates = [stl_set_node_fmt, stl_set_fmt, stl_set_pairib]
 
 def MakeSetTypes(sKeyType, sKeyName=None):
-	if sKeyName is None:
-		sKeyName = sKeyType
-	stl_types_reified = map(lambda s:s.format(sKeyType,sKeyName),stl_set_templates)
-	stl_types_reduced = reduce(lambda x,y: x+y, stl_types_reified)
-	if not ParseOneDecl(stl_types_reduced):
-		print("Could not parse declaration: %s" % stl_types_reduced)
-		return False
-	return True
-	
+    if sKeyName is None:
+        sKeyName = sKeyType
+    stl_types_reified = map(lambda s:s.format(sKeyType,sKeyName),stl_set_templates)
+    stl_types_reduced = functools.reduce(lambda x,y: x+y, stl_types_reified)
+    if not ParseOneDecl(stl_types_reduced):
+        print("Could not parse declaration: %s" % stl_types_reduced)
+        return False
+    return True
+    
 stl_deque_cont = ("struct deque_{1} {{"
 "  void *_Myproxy;"
 "  {0} **_Map;"
@@ -103,61 +104,61 @@ stl_deque_cont = ("struct deque_{1} {{"
 "}};")
 
 def MakeDequeType(sEltType, sEltName=None):
-	if sEltName is None:
-		sEltName = sEltType
-	deque_type_reified = stl_deque_cont.format(sEltType, sEltName)
-	if not ParseOneDecl(deque_type_reified):
-		print("Could not parse declaration: %s" % deque_type_reified)
-		return False
-	return True
+    if sEltName is None:
+        sEltName = sEltType
+    deque_type_reified = stl_deque_cont.format(sEltType, sEltName)
+    if not ParseOneDecl(deque_type_reified):
+        print("Could not parse declaration: %s" % deque_type_reified)
+        return False
+    return True
 
 stl_vector_cont = ("struct vector_{1} {{"
 "  {0} *_Myfirst;"
-"	 {0} *_Mylast;"
-"	 {0} *_Myend;"
+"    {0} *_Mylast;"
+"    {0} *_Myend;"
 "}};")
-	
+    
 def MakeVectorType(sEltType, sEltName=None):
-	if sEltName is None:
-		sEltName = sEltType
-	vector_type_reified = stl_vector_cont.format(sEltType, sEltName)
-	if not ParseOneDecl(vector_type_reified):
-		print("Could not parse declaration: %s" % vector_type_reified)
-		return False
-	return True
+    if sEltName is None:
+        sEltName = sEltType
+    vector_type_reified = stl_vector_cont.format(sEltType, sEltName)
+    if not ParseOneDecl(vector_type_reified):
+        print("Could not parse declaration: %s" % vector_type_reified)
+        return False
+    return True
 
 stl_list_node = ("struct _List_node_{1};" # FORWARD DECLARATION
 "struct _List_node_{1}"
 "{{ "
-"	 _List_node_{1} *_Next;"
-"	 _List_node_{1} *_Prev;"
-"	 {0} _Myval;"
+"    _List_node_{1} *_Next;"
+"    _List_node_{1} *_Prev;"
+"    {0} _Myval;"
 "}};")
 
 stl_list_cont = ("struct list_{1}"
 "{{ "
-"	 _List_node_{1} *_Myhead;"
-"	 size_t _Mysize;"
+"    _List_node_{1} *_Myhead;"
+"    size_t _Mysize;"
 "}};")
-	
+    
 stl_list_templates = [stl_list_node, stl_list_cont]
 
 def MakeListTypes(sEltType, sEltName=None):
-	if sEltName is None:
-		sEltName = sEltType
-	stl_types_reified = map(lambda s:s.format(sEltType,sEltName),stl_list_templates)
-	stl_types_reduced = reduce(lambda x,y: x+y, stl_types_reified)
-	if not ParseOneDecl(stl_types_reduced):
-		print("Could not parse declaration: %s" % stl_types_reduced)
-		return False
-	return True
+    if sEltName is None:
+        sEltName = sEltType
+    stl_types_reified = map(lambda s:s.format(sEltType,sEltName),stl_list_templates)
+    stl_types_reduced = functools.reduce(lambda x,y: x+y, stl_types_reified)
+    if not ParseOneDecl(stl_types_reduced):
+        print("Could not parse declaration: %s" % stl_types_reduced)
+        return False
+    return True
 
 stl_ref_count_base_vtbl_fmt = ("struct _Ref_count_base_{1};"
 "struct _Ref_count_base_{1}_vtbl {{"
-"	void  (__fastcall *_Destroy)(_Ref_count_base_{1} *this);"
-"	void  (__fastcall *_Delete_this)(_Ref_count_base_{1} *this);"
-"	void  (__fastcall *Destructor)(_Ref_count_base_{1} *this);"
-"	void *(__fastcall *_Get_deleter)(_Ref_count_base_{1} *this);"
+"   void  (__fastcall *_Destroy)(_Ref_count_base_{1} *this);"
+"   void  (__fastcall *_Delete_this)(_Ref_count_base_{1} *this);"
+"   void  (__fastcall *Destructor)(_Ref_count_base_{1} *this);"
+"   void *(__fastcall *_Get_deleter)(_Ref_count_base_{1} *this);"
 "}};")
 
 stl_ref_count_base_fmt = ("struct _Ref_count_base_{1}_vtbl;"
@@ -195,11 +196,11 @@ stl_shared_ptr_obj_fmt = ("struct _Ref_count_obj_{1};"
 stl_shared_ptr_templates = [stl_ref_count_base_vtbl_fmt, stl_ref_count_base_fmt, stl_ref_count_fmt, stl_ref_count_obj_fmt, stl_shared_ptr_fmt, stl_shared_ptr_obj_fmt]
 
 def MakeSharedPtrTypes(sEltType, sEltName=None):
-	if sEltName is None:
-		sEltName = sEltType
-	stl_types_reified = map(lambda s:s.format(sEltType,sEltName),stl_shared_ptr_templates)
-	stl_types_reduced = reduce(lambda x,y: x+y, stl_types_reified)
-	if not ParseOneDecl(stl_types_reduced):
-		print "Could not parse declaration:"
-		return False
-	return True
+    if sEltName is None:
+        sEltName = sEltType
+    stl_types_reified = map(lambda s:s.format(sEltType,sEltName),stl_shared_ptr_templates)
+    stl_types_reduced = functools.reduce(lambda x,y: x+y, stl_types_reified)
+    if not ParseOneDecl(stl_types_reduced):
+        print("Could not parse declaration:")
+        return False
+    return True
